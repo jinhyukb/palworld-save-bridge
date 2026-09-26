@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Palworld Save Bridge</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="renderer.js" type="module"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <button class="brand" id="home-link" aria-label="변환 첫 화면">
+        <span class="brand-mark" aria-hidden="true"
+          ><svg viewBox="0 0 32 32">
+            <path
+              d="M5 24V15a11 11 0 0 1 22 0v9M10 24V15a6 6 0 0 1 12 0v9M3 24h26"
+            /></svg
+        ></span>
+        <span>Palworld <strong>Save Bridge</strong></span>
+      </button>
+      <nav aria-label="주 메뉴">
+        <button id="history-link">백업 · 복구</button
+        ><button id="help-link">사용 안내</button>
+      </nav>
+      <span class="offline"><i></i>내 PC에서만 처리</span>
+    </header>
+
+    <main>
+      <div class="stepper" id="stepper" aria-label="변환 단계">
+        <span data-step="1" class="active"><b>01</b> 파일 불러오기</span><i></i>
+        <span data-step="2"><b>02</b> 캐릭터 · 이름 설정</span><i></i>
+        <span data-step="3"><b>03</b> 변환 결과</span>
+      </div>
+      <div id="error" class="notice error" role="alert" hidden>
+        <div>
+          <strong id="error-title">확인이 필요합니다</strong>
+          <p id="error-text"></p>
+        </div>
+        <button id="dismiss-error" aria-label="오류 닫기">×</button>
+      </div>
+
+      <section id="import-screen" class="screen">
+        <div class="hero-layout">
+          <div class="hero-copy">
+            <p class="eyebrow">YOUR WORLD, CONTINUED</p>
+            <h1>같은 캐릭터로,<br />나의 월드에서.</h1>
+            <p class="lead">
+              친구에게 받은 월드를 내 PC로 이어 오세요.<br />함께 모은 팰과 쌓아
+              온 시간을 그대로.
+            </p>
+            <div class="scope-label">Windows · Steam 로컬 협동 월드</div>
+          </div>
+          <div class="drop-card" id="drop-zone">
+            <div class="file-art" aria-hidden="true">
+              <svg viewBox="0 0 100 86">
+                <path
+                  class="folder-back"
+                  d="M12 24V17a5 5 0 0 1 5-5h25l8 9h33a5 5 0 0 1 5 5v42a5 5 0 0 1-5 5H17a5 5 0 0 1-5-5Z"
+                />
+                <path
+                  class="folder-front"
+                  d="M8 34a5 5 0 0 1 5-5h74a5 5 0 0 1 5 6l-8 34a5 5 0 0 1-5 4H19a5 5 0 0 1-5-4Z"
+                />
+                <path class="folder-line" d="M38 47h24m-12-9v23m-9-9 9 9 9-9" />
+              </svg>
+            </div>
+            <h2>받은 파일을 여기에 놓아 주세요</h2>
+            <p>
+              월드 폴더 또는 ZIP 파일을 넣으면<br />캐릭터를 자동으로 찾아
+              드립니다.
+            </p>
+            <div class="button-row centered">
+              <button id="pick-folder" class="primary">
+                폴더 선택 <span>↗</span></button
+              ><button id="pick-zip" class="secondary">ZIP 선택</button>
+            </div>
+            <span class="drop-footnote"
+              >파일은 외부 서버로 전송되지 않습니다.</span
+            >
+          </div>
+        </div>
+        <div class="benefits">
+          <div>
+            <span class="mini-icon">01</span>
+            <div>
+              <h3>원본은 그대로</h3>
+              <p>변환 결과를 새 폴더에 따로 저장합니다.</p>
+            </div>
+          </div>
+          <div>
+            <span class="mini-icon">02</span>
+            <div>
+              <h3>내 캐릭터를 선택</h3>
+              <p>이름과 레벨, 소유 팰을 보고 고르세요.</p>
+            </div>
+          </div>
+          <div>
+            <span class="mini-icon">03</span>
+            <div>
+              <h3>필요하면 되돌리기</h3>
+              <p>게임 적용 전 기존 월드를 백업합니다.</p>
+            </div>
+          </div>
+        </div>
+        <div id="world-picker" class="panel" hidden>
+          <h2>어느 월드를 이어 할까요?</h2>
+          <p class="muted">
+            여러 월드가 발견됐습니다. 변환할 폴더를 선택하세요.
+          </p>
+          <div id="world-candidates" class="candidate-list"></div>
+        </div>
+      </section>
+
+      <section id="configure-screen" class="screen" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">MAKE IT YOURS</p>
+            <h1>어떤 캐릭터로 이어 할까요?</h1>
+          </div>
+          <button id="change-input" class="text-button">
+            다른 파일 불러오기
+          </button>
+        </div>
+        <div class="world-banner">
+          <div>
+            <span class="muted">불러온 월드</span
+            ><strong id="source-world"></strong>
+          </div>
+          <div id="world-stats" class="muted"></div>
+          <span class="status-tag">파일 읽기 검사 통과</span>
+        </div>
+        <div class="configure-grid">
+          <div>
+            <div class="label-line">
+              <h2>플레이할 캐릭터</h2>
+              <span class="muted">선택한 캐릭터가 새 방장이 됩니다.</span>
+            </div>
+            <div
+              id="player-list"
+              class="player-list"
+              role="radiogroup"
+              aria-label="플레이할 캐릭터"
+            ></div>
+            <div class="panel names-panel">
+              <h2>이름 바꾸기 <span class="optional">선택</span></h2>
+              <p class="muted small">입력하지 않으면 기존 이름을 유지합니다.</p>
+              <div class="name-grid">
+                <label
+                  >새 월드명<input
+                    id="world-name"
+                    type="text"
+                    maxlength="128"
+                    autocomplete="off" /></label
+                ><label
+                  >새 캐릭터명<input
+                    id="character-name"
+                    type="text"
+                    maxlength="64"
+                    autocomplete="off"
+                    disabled
+                /></label>
+              </div>
+            </div>
+            <details class="panel advanced">
+              <summary>지도 기록 · 저장 위치</summary>
+              <div class="details-content">
+                <label for="map-choice">지도 탐험 기록</label
+                ><select id="map-choice">
+                  <option value="supplied">받은 폴더의 지도 기록 유지</option>
+                  <option value="none">새 지도 기록으로 시작</option>
+                </select>
+                <p id="map-help" class="small muted">
+                  받은 지도 기록은 기존 방장의 기록일 수 있습니다. 본인 기록이
+                  있다면 선택할 수 있어요.
+                </p>
+                <button id="pick-local" class="secondary small-button">
+                  내 LocalData.sav 직접 선택
+                </button>
+                <div class="output-setting">
+                  <div>
+                    <label>결과 저장 위치</label>
+                    <p id="output-path" class="path"></p>
+                  </div>
+                  <button id="pick-output" class="text-button">변경</button>
+                </div>
+              </div>
+            </details>
+          </div>
+          <aside class="panel preview">
+            <p class="eyebrow">BEFORE → AFTER</p>
+            <h2>변환 미리보기</h2>
+            <div class="preview-row">
+              <span>월드</span><small id="before-world"></small
+              ><strong id="after-world"></strong>
+            </div>
+            <div class="preview-row">
+              <span>새 방장 캐릭터</span
+              ><small id="before-character">캐릭터를 선택해 주세요</small
+              ><strong id="after-character">—</strong>
+            </div>
+            <div id="preserved-summary" class="preserved-summary">
+              선택한 캐릭터의 진행 상황을 유지합니다.
+            </div>
+            <p class="small muted">
+              레벨, 아이템, 팰 능력치는 변경하지 않습니다. 결과는 독립된 월드로
+              저장됩니다.
+            </p>
+            <button id="convert" class="primary wide" disabled>
+              변환본 만들기 <span>→</span>
+            </button>
+            <p class="small muted centered-text">
+              아직 게임 세이브에 적용되지 않습니다.
+            </p>
+          </aside>
+        </div>
+      </section>
+
+      <section id="result-screen" class="screen" hidden>
+        <div class="result-heading">
+          <span class="success-circle">✓</span>
+          <div>
+            <p class="eyebrow">READY FOR YOUR NEXT ADVENTURE</p>
+            <h1>이어 할 준비가 됐어요.</h1>
+            <p class="muted">
+              변환 파일을 저장했고, 데이터 보존 검사를 통과했습니다.
+            </p>
+          </div>
+        </div>
+        <div class="result-grid">
+          <div class="panel result-card">
+            <span class="muted">나의 월드</span>
+            <h2 id="result-world"></h2>
+            <div class="result-character">
+              <span class="avatar">P</span>
+              <div>
+                <strong id="result-character"></strong>
+                <p id="result-stats" class="muted"></p>
+              </div>
+            </div>
+            <div class="verification-list">
+              <p>✓ 원본 파일 보존</p>
+              <p>✓ 캐릭터 · 팰 · 월드 기록 검사</p>
+              <p>✓ 변환 결과 재읽기 검사</p>
+            </div>
+            <p class="game-check">
+              게임 내 확인은 아직 남아 있어요.<br /><span
+                >입장 후 캐릭터, 인벤토리, 팰, 거점을 확인해 주세요.</span
+              >
+            </p>
+            <button id="open-result" class="secondary wide">
+              결과 폴더 열기 ↗
+            </button>
+            <p id="result-path" class="path"></p>
+          </div>
+          <div class="panel install-card">
+            <h2>내 게임에 적용하기</h2>
+            <p class="muted">
+              기존 월드를 먼저 백업한 뒤 적용합니다.<br />Palworld를 완전히
+              종료해 주세요.
+            </p>
+            <label for="account-choice">Steam 계정</label
+            ><select id="account-choice"></select>
+            <p id="account-note" class="small muted"></p>
+            <label class="check-line" id="replace-label"
+              ><input type="checkbox" id="replace-confirm" /><span
+                >같은 월드의 기존 세이브를 백업하고 교체합니다.</span
+              ></label
+            ><button id="apply" class="primary wide">
+              백업 후 게임에 적용
+            </button>
+            <div id="apply-status" class="notice success" hidden></div>
+            <p class="small muted">
+              결과 폴더에는 직접 복사할 수 있는 월드 폴더, ZIP과 적용 안내도
+              들어 있습니다.
+            </p>
+          </div>
+        </div>
+        <div class="bottom-note">
+          <p>
+            친구의 원래 월드와 자동 동기화되지 않습니다. 기존 방장이 다시
+            참가하려면 별도 캐릭터 연결 작업이 필요합니다.
+          </p>
+          <button id="new-conversion" class="text-button">
+            다른 월드 변환하기 →
+          </button>
+        </div>
+      </section>
+
+      <section id="history-screen" class="screen" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">A WAY BACK</p>
+            <h1>백업과 복구</h1>
+            <p class="muted">
+              되돌리기 전, 현재 진행 상황도 새 백업으로 보관합니다.
+            </p>
+          </div>
+          <button id="back-from-history" class="secondary">
+            변환 화면으로
+          </button>
+        </div>
+        <div id="history-list"></div>
+        <button id="open-backups" class="text-button">백업 폴더 열기 ↗</button>
+      </section>
+
+      <section id="help-screen" class="screen" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">A LITTLE GUIDANCE</p>
+            <h1>처음이라면 이렇게 해 보세요.</h1>
+          </div>
+          <button id="back-from-help" class="secondary">돌아가기</button>
+        </div>
+        <div class="panel help-content">
+          <h2>방장에게 무엇을 받아야 하나요?</h2>
+          <p>
+            <code>Level.sav</code>, <code>LevelMeta.sav</code>,
+            <code>Players</code> 폴더가 들어 있는
+            <strong>월드 폴더 전체</strong>를 받아 주세요. 폴더를 ZIP으로
+            압축해도 됩니다.
+          </p>
+          <h2>어떤 캐릭터를 선택해야 하나요?</h2>
+          <p>
+            친구의 방에 들어가 플레이하던 본인 캐릭터를 선택하세요. 닉네임이
+            기억나지 않으면 레벨과 소유 팰 수를 확인하세요. 여러 참가자가 있다면
+            친구에게도 확인해 주세요.
+          </p>
+          <h2>적용 후에는 어떻게 하나요?</h2>
+          <p>
+            Palworld의 <strong>게임 시작</strong>에서 설정한 월드를 선택하세요.
+            초대 코드 없이 혼자 입장할 수 있습니다. 캐릭터 생성 화면이 나온다면
+            새 캐릭터를 만들지 말고 종료한 뒤 백업을 보관해 주세요.
+          </p>
+          <h2>무엇을 지원하나요?</h2>
+          <p>
+            Windows Steam 로컬 협동 월드의 방장 변경을 지원합니다. 실제 파일
+            구조와 보존 검사를 통과한 세이브만 변환하며, 모든 게임 버전을
+            지원하는 것은 아닙니다. 전용 서버, Game Pass, 다른 월드로 캐릭터
+            옮기기는 첫 버전에 포함되지 않습니다.
+          </p>
+          <h2>내 데이터는 어디에 있나요?</h2>
+          <p>
+            파일은 PC 안에서만 처리합니다. 원본, 결과 파일, 적용 전 백업은 서로
+            분리됩니다. 백업·설정·로그는 실행 파일 옆의
+            <code>Palworld Save Bridge Data</code> 폴더에 저장됩니다. 이 폴더를
+            보관하면 다음 실행에서도 복구 기록을 확인할 수 있습니다.
+          </p>
+          <h2>Steam Cloud 충돌이 표시된다면?</h2>
+          <p>
+            클라우드 상태는 이 앱이 변경하지 않습니다. 파일 날짜와 방금 만든
+            백업을 확인한 뒤 적용한 로컬 세이브를 유지할지 선택하세요. 판단이
+            어려우면 선택하기 전에 백업 폴더를 따로 보관해 주세요.
+          </p>
+          <h2>오류가 계속된다면</h2>
+          <p>
+            오류 코드와 게임 버전, 발생한 단계를 함께 알려 주세요. 로그에는 로컬
+            경로가 포함될 수 있으므로 공개하기 전에 확인해 주세요.
+          </p>
+          <button id="open-logs" class="secondary">로컬 로그 폴더 열기</button>
+          <p class="license-note">
+            비공식 커뮤니티 도구 · Pocketpair와 무관합니다.<br />GPL-3.0 · 기반
+            도구와 라이선스는 배포본의 THIRD_PARTY_NOTICES.md에 명시되어
+            있습니다.
+          </p>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <span>PALWORLD SAVE BRIDGE</span><span>원본을 지키며, 다음 모험으로.</span
+      ><span id="version">v0.1.0</span>
+    </footer>
+
+    <dialog id="progress-dialog" aria-labelledby="progress-title">
+      <div class="progress-symbol" aria-hidden="true">↗</div>
+      <h2 id="progress-title">세이브를 처리하고 있습니다.</h2>
+      <p id="progress-message" aria-live="polite">잠시만 기다려 주세요.</p>
+      <progress id="progress-bar" value="0" max="100"></progress>
+      <div class="progress-bottom">
+        <span id="progress-percent">0%</span
+        ><button id="cancel-job" class="text-button">취소</button>
+      </div>
+      <p class="small muted">처리 시간은 월드 크기에 따라 달라집니다.</p>
+    </dialog>
+    <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+      <h2 id="confirm-title">이전 상태로 복구할까요?</h2>
+      <p id="confirm-message"></p>
+      <div class="button-row">
+        <button id="confirm-cancel" class="secondary">취소</button
+        ><button id="confirm-ok" class="primary">현재 기록 보관 후 복구</button>
+      </div>
+    </dialog>
+  </body>
+</html>

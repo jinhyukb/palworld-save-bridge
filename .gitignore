@@ -1,0 +1,17 @@
+node_modules/
+Palworld Save Bridge Data/
+results/
+backups/
+backup/
+converted/
+release/
+work/
+qa/
+*.sav
+*.sav.*
+*.vdf
+*.zip
+*.exe
+*.log
+*.tmp
+*.bak

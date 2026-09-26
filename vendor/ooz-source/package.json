@@ -1,0 +1,26 @@
+{
+  "name": "ooz-wasm",
+  "version": "2.0.0",
+  "type": "module",
+  "author": {
+    "name": "Alexander Drozdov"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SnosMe/ooz-wasm.git"
+  },
+  "license": "GPL-3.0-or-later",
+  "keywords": [
+    "decompressor",
+    "kraken",
+    "wasm"
+  ],
+  "exports": "./index.js",
+  "files": [
+    "index.d.ts",
+    "index.js",
+    "build/ooz.js"
+  ],
+  "devDependencies": {},
+  "dependencies": {}
+}
